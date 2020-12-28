@@ -32,6 +32,8 @@ function templateList(filelist){
 }
  
 const app = http.createServer(function(request,response){
+    // request 요청할 때 웹 브라우저가 보낸 정보
+    // response 응답할 때 우리가 웹 브라우저에 전송할 정보
     const _url = request.url;
     const queryData = url.parse(_url, true).query;
     const pathname = url.parse(_url, true).pathname;
@@ -39,6 +41,7 @@ const app = http.createServer(function(request,response){
     if(pathname === '/'){
       if(queryData.id === undefined){
         fs.readdir('./data', function(error, filelist){
+          // 화면의 홈 부분
           let title = 'Welcome';
           let description = 'Hello, Node.js';
           let list = templateList(filelist);
@@ -52,10 +55,11 @@ const app = http.createServer(function(request,response){
       } else {
         fs.readdir('./data', function(error, filelist){
           fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
-            const title = queryData.id;
-            const list = templateList(filelist);
-            const template = templateHTML(title, list,
-              `<h2>${title}</h2>${description}`, `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
+            let title = queryData.id;
+            let list = templateList(filelist);
+            let template = templateHTML(title, list,
+              `<h2>${title}</h2>${description}`,
+              `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
               );
             response.writeHead(200);
             response.end(template);
@@ -69,7 +73,7 @@ const app = http.createServer(function(request,response){
             let title = 'WEB - create';
             let list = templateList(filelist);
             let template = templateHTML(title, list, `
-            <form action="http://localhost:3000/create_process" method="post">
+            <form action="/create_process" method="post">
             <p>
               <input type="text" name="title" placeholder="title">
             </p>
@@ -81,7 +85,7 @@ const app = http.createServer(function(request,response){
             </p>
           </form>
         `, '');
-
+          // create 부분 만들기(url, 요청)
             response.writeHead(200);
             response.end(template);
           });
@@ -89,20 +93,51 @@ const app = http.createServer(function(request,response){
     } else if(pathname === '/create_process') {
       let body = '';
       request.on('data', function(data){
+          // 웹 브라우저가 POST방식으로 전송할 떄 data의 양이 많으면 함수 호출하도록 약속
         body = body + data;
       });
       request.on('end', function(){
+        // 들어올 정보가 더 이상 없으면 정보 수신 끝
         let post = qs.parse(body);
         let title = post.title;
         let description = post.description;
-        fs.writeFile(`data/${title}`, description, 'utf8', function(err) {
-          response.writeHead(302, {Location: `/?id=${title}`});
+        // 제목과 내용 업로드
+        fs.writeFile(`data/${title}`, description, 'utf8', function(err) { // err가 있을 경우 처리 방식
+          response.writeHead(302, {Location: `/?id=${title}`}); // 보내고 싶은 위치의 주소
           response.end('success');
         });
         // console.log(post.title);
       });
       
 
+    } else if(pathname === '/update'){
+      fs.readdir('./data', function(error, filelist){
+        fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+          let title = queryData.id;
+          let list = templateList(filelist);
+          let template = templateHTML(title, list,
+            //hidden으로 하여 id 값을 받고 변경된 title을 삽입
+            `
+            <form action="/update_process" method="post">
+              <input type="hidden" name="id" value="${title}">
+              <p>
+                <input type="text" name="title" placeholder="title" value="${title}">
+              </p>
+              <p>
+                <textarea name="description" placeholder="description">${description}</textarea>
+              </p>
+              <p>
+                <input type="submit">
+              </p>
+            </form>
+            `,
+            `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
+            );
+            // 업데이트 시 선택한 제목과 내용에 대하여 불러와 title, description text 박스에 보이기
+          response.writeHead(200);
+          response.end(template);
+        });
+      });
     } else {
       response.writeHead(404);
       response.end('Not found');
