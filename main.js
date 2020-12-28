@@ -138,6 +138,28 @@ const app = http.createServer(function(request,response){
           response.end(template);
         });
       });
+    } else if(pathname === '/update_process') {
+      let body = '';
+      request.on('data', function(data){
+          // 웹 브라우저가 POST방식으로 전송할 떄 data의 양이 많으면 함수 호출하도록 약속
+        body = body + data;
+      });
+      request.on('end', function(){
+        // 들어올 정보가 더 이상 없으면 정보 수신 끝
+        let post = qs.parse(body);
+        let id = post.id;
+        let title = post.title;
+        let description = post.description;
+        fs.rename(`data/${id}`, `data/${title}`, function(error){
+          // 제목과 내용 수정 업로드
+          fs.writeFile(`data/${title}`, description, 'utf8', function(err) { // err가 있을 경우 처리 방식
+            response.writeHead(302, {Location: `/?id=${title}`}); // 보내고 싶은 위치의 주소
+            response.end();
+          })
+        })
+        console.log(post);
+      
+      });
     } else {
       response.writeHead(404);
       response.end('Not found');
