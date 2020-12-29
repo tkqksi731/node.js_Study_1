@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');
+const { title } = require('process');
  
 function templateHTML(title, list, body, control){
   return `
@@ -59,7 +60,12 @@ const app = http.createServer(function(request,response){
             let list = templateList(filelist);
             let template = templateHTML(title, list,
               `<h2>${title}</h2>${description}`,
-              `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
+              `<a href="/create">create</a>
+              <a href="/update?id=${title}">update</a>
+              <form action="delete_process" method="post">
+                <input type="hidden" name="id" value="${title}">
+                <input type="submit" value="delete">
+              </form>`
               );
             response.writeHead(200);
             response.end(template);
@@ -158,6 +164,23 @@ const app = http.createServer(function(request,response){
           })
         })
         console.log(post);
+      
+      });
+    } else if(pathname === '/delete_process') {
+      let body = '';
+      request.on('data', function(data){
+          // 웹 브라우저가 POST방식으로 전송할 떄 data의 양이 많으면 함수 호출하도록 약속
+        body = body + data;
+      });
+      request.on('end', function(){
+        // 들어올 정보가 더 이상 없으면 정보 수신 끝
+        let post = qs.parse(body);
+        let id = post.id;
+        // unlink로 삭제
+        fs.unlink(`data/${id}`, function(error){
+          response.writeHead(302, {Location: `/`});
+          response.end();
+        })
       
       });
     } else {
