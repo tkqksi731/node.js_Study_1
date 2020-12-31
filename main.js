@@ -2,34 +2,35 @@ const http = require('http');
 const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');
-const { title } = require('process');
- 
-function templateHTML(title, list, body, control){
-  return `
-  <!doctype html>
-  <html>
-  <head>
-    <title>WEB - ${title}</title>
-    <meta charset="utf-8">
-  </head>
-  <body>
-    <h1><a href="/">WEB</a></h1>
-    ${list}
-    ${control}
-    ${body}
-  </body>
-  </html>
-  `;
-}
-function templateList(filelist){
-  let list = '<ul>';
-  let i = 0;
-  while(i < filelist.length){
-    list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
-    i = i + 1;
+
+let template = {
+  HTML:function(title, list, body, control){
+    return `
+    <!doctype html>
+    <html>
+    <head>
+      <title>WEB - ${title}</title>
+      <meta charset="utf-8">
+    </head>
+    <body>
+      <h1><a href="/">WEB</a></h1>
+      ${list}
+      ${control}
+      ${body}
+    </body>
+    </html>
+    `;
+  }, 
+  list:function(filelist){
+    let list = '<ul>';
+    let i = 0;
+    while(i < filelist.length){
+      list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
+      i = i + 1;
+    }
+    list = list+'</ul>';
+    return list;
   }
-  list = list+'</ul>';
-  return list;
 }
  
 const app = http.createServer(function(request,response){
@@ -45,20 +46,32 @@ const app = http.createServer(function(request,response){
           // 화면의 홈 부분
           let title = 'Welcome';
           let description = 'Hello, Node.js';
+          
+          /*
+          기존
           let list = templateList(filelist);
           let template = templateHTML(title, list,
-            `<h2>${title}</h2>${description}`, `<a href="/create">create</a>`
-            
+            `<h2>${title}</h2>${description}`,
+            `<a href="/create">create</a>`
             );
+          */
+
+          // 변경
+          let list = template.list(filelist);
+          let html = template.HTML(title, list,
+            `<h2>${title}</h2>${description}`,
+            `<a href="/create">create</a>`
+            );
+
           response.writeHead(200);
-          response.end(template);
+          response.end(html);
         });
       } else {
         fs.readdir('./data', function(error, filelist){
           fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
             let title = queryData.id;
-            let list = templateList(filelist);
-            let template = templateHTML(title, list,
+            let list = template.list(filelist);
+            let html = template.HTML(title, list,
               `<h2>${title}</h2>${description}`,
               `<a href="/create">create</a>
               <a href="/update?id=${title}">update</a>
@@ -68,7 +81,7 @@ const app = http.createServer(function(request,response){
               </form>`
               );
             response.writeHead(200);
-            response.end(template);
+            response.end(html);
           });
         });
       }
@@ -77,8 +90,8 @@ const app = http.createServer(function(request,response){
         fs.readdir('./data', function(error, filelist){
             
             let title = 'WEB - create';
-            let list = templateList(filelist);
-            let template = templateHTML(title, list, `
+            let list = template.list(filelist);
+            let html = template.HTML(title, list, `
             <form action="/create_process" method="post">
             <p>
               <input type="text" name="title" placeholder="title">
@@ -93,7 +106,7 @@ const app = http.createServer(function(request,response){
         `, '');
           // create 부분 만들기(url, 요청)
             response.writeHead(200);
-            response.end(template);
+            response.end(html);
           });
     
     } else if(pathname === '/create_process') {
@@ -120,8 +133,8 @@ const app = http.createServer(function(request,response){
       fs.readdir('./data', function(error, filelist){
         fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
           let title = queryData.id;
-          let list = templateList(filelist);
-          let template = templateHTML(title, list,
+          let list = template.list(filelist);
+          let html = template.HTML(title, list,
             //hidden으로 하여 id 값을 받고 변경된 title을 삽입
             `
             <form action="/update_process" method="post">
@@ -141,9 +154,10 @@ const app = http.createServer(function(request,response){
             );
             // 업데이트 시 선택한 제목과 내용에 대하여 불러와 title, description text 박스에 보이기
           response.writeHead(200);
-          response.end(template);
+          response.end(html);
         });
       });
+      // nodejs file write search
     } else if(pathname === '/update_process') {
       let body = '';
       request.on('data', function(data){
@@ -166,6 +180,7 @@ const app = http.createServer(function(request,response){
         console.log(post);
       
       });
+      // Nodejs delete file search
     } else if(pathname === '/delete_process') {
       let body = '';
       request.on('data', function(data){
