@@ -2,37 +2,11 @@ const http = require('http');
 const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');
+const template = require('./lib/template.js');
+// nodejs path parse search
+const path = require('path');
+const sanitizeHtml = require('sanitize-html');
 
-let template = {
-  HTML:function(title, list, body, control){
-    return `
-    <!doctype html>
-    <html>
-    <head>
-      <title>WEB - ${title}</title>
-      <meta charset="utf-8">
-    </head>
-    <body>
-      <h1><a href="/">WEB</a></h1>
-      ${list}
-      ${control}
-      ${body}
-    </body>
-    </html>
-    `;
-  }, 
-  list:function(filelist){
-    let list = '<ul>';
-    let i = 0;
-    while(i < filelist.length){
-      list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
-      i = i + 1;
-    }
-    list = list+'</ul>';
-    return list;
-  }
-}
- 
 const app = http.createServer(function(request,response){
     // request 요청할 때 웹 브라우저가 보낸 정보
     // response 응답할 때 우리가 웹 브라우저에 전송할 정보
@@ -68,15 +42,18 @@ const app = http.createServer(function(request,response){
         });
       } else {
         fs.readdir('./data', function(error, filelist){
-          fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+          const filteredId = path.parse(queryData.id).base;
+          fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
             let title = queryData.id;
+            let sanitizedTitle = sanitizeHtml(title);
+            let sanitizedDescroption = sanitizeHtml(description);
             let list = template.list(filelist);
-            let html = template.HTML(title, list,
-              `<h2>${title}</h2>${description}`,
+            let html = template.HTML(sanitizedTitle, list,
+              `<h2>${sanitizedTitle}</h2>${sanitizedDescroption}`,
               `<a href="/create">create</a>
-              <a href="/update?id=${title}">update</a>
+              <a href="/update?id=${sanitizedTitle}">update</a>
               <form action="delete_process" method="post">
-                <input type="hidden" name="id" value="${title}">
+                <input type="hidden" name="id" value="${sanitizedTitle}">
                 <input type="submit" value="delete">
               </form>`
               );
@@ -131,7 +108,7 @@ const app = http.createServer(function(request,response){
 
     } else if(pathname === '/update'){
       fs.readdir('./data', function(error, filelist){
-        fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+        fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
           let title = queryData.id;
           let list = template.list(filelist);
           let html = template.HTML(title, list,
@@ -191,8 +168,9 @@ const app = http.createServer(function(request,response){
         // 들어올 정보가 더 이상 없으면 정보 수신 끝
         let post = qs.parse(body);
         let id = post.id;
+        const filteredId = path.parse(id).base;
         // unlink로 삭제
-        fs.unlink(`data/${id}`, function(error){
+        fs.unlink(`data/${filteredId}`, function(error){
           response.writeHead(302, {Location: `/`});
           response.end();
         })

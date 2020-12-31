@@ -19,3 +19,6 @@
 - App 제작 - 글 삭제 기능 완성
 - Object and Array
 - App 제작 - 템플릿 기능 정리정돈
+- 모듈 형식 and 모듈의 활용
+- App 제작 - 출력정보에 대한 보안 - npm init -> npm sanitize html search
+- App 제작 - API와 CreateServer
