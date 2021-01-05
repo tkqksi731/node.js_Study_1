@@ -6,6 +6,26 @@
 
 > node.js로 웹 서버 만들기
 
+---
+
+Click [here](https://nodejs.org/ko/)
+
+Node.js 설치
+
+---
+
+```js
+npm init -y
+```
+
+npm 설치 - 패키지 프로그램
+
+```js
+npm install pm2 -g
+```
+
+pm2설치
+
 - JavaScript - 기본 함수(Number, String. 변수의 형식 및 활용... 등)
 - URL을 통해서 입력된 값 사용하기
 - Node.js 동기와 비동기
