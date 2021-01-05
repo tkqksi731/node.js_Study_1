@@ -42,7 +42,7 @@ const app = http.createServer(function(request,response){
         });
       } else {
         fs.readdir('./data', function(error, filelist){
-          const filteredId = path.parse(queryData.id).base;
+          const filteredId = path.parse(queryData.id).base; // security
           fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
             let title = queryData.id;
             let sanitizedTitle = sanitizeHtml(title);
@@ -108,6 +108,7 @@ const app = http.createServer(function(request,response){
 
     } else if(pathname === '/update'){
       fs.readdir('./data', function(error, filelist){
+        const filteredId = path.parse(queryData.id).base; // security
         fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
           let title = queryData.id;
           let list = template.list(filelist);
@@ -168,7 +169,7 @@ const app = http.createServer(function(request,response){
         // 들어올 정보가 더 이상 없으면 정보 수신 끝
         let post = qs.parse(body);
         let id = post.id;
-        const filteredId = path.parse(id).base;
+        const filteredId = path.parse(id).base; // security
         // unlink로 삭제
         fs.unlink(`data/${filteredId}`, function(error){
           response.writeHead(302, {Location: `/`});
